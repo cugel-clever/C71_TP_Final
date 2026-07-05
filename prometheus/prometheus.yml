@@ -1,0 +1,159 @@
+# prometheus/prometheus.yml: Configuration de Prometheus
+#
+# Ce fichier définit :
+#   1. Les paramètres globaux (fréquence de scrape, timeouts)
+#   2. Les cibles à scraper (Python local, MySQL exporter, Prometheus lui-même)
+#   3. Le lien vers les règles d'alertes
+#
+# EMPLACEMENT : ./prometheus/prometheus.yml
+# (monté en lecture seule dans le container Prometheus)
+#
+# Rechargement à chaud (sans redémarrer le container) :
+#   curl -X POST http://localhost:9090/-/reload
+
+
+global:
+  # Intervalle par défaut entre deux collectes de métriques
+  # 15s est un bon compromis performance / granularité pour un pipeline batch
+  scrape_interval: 15s
+
+  # Délai d'évaluation des règles d'alerte
+  evaluation_interval: 15s
+
+  # Timeout par cible — si pas de réponse en 10s, la cible est marquée "down"
+  scrape_timeout: 10s
+
+  # Labels ajoutés à toutes les métriques collectées par ce Prometheus
+  # Utile si vous avez plusieurs Prometheus (prod, dev, etc.)
+  external_labels:
+    environment: "development"
+    project: "labo_pipeline"
+
+
+
+# RÈGLES D'ALERTES
+# Prometheus évalue ces fichiers à chaque evaluation_interval.
+# Les alertes déclenchées sont envoyées à Alertmanager.
+# 
+rule_files:
+  - "/etc/prometheus/alerts.yml"   # Règles d'alertes pipeline (RSI, erreurs, etc.)
+
+
+# 
+# ALERTMANAGER
+# Prometheus envoie les alertes déclenchées à Alertmanager.
+# 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "alertmanager:9093"   # Nom du service Docker
+
+
+# 
+# CIBLES DE SCRAPE (jobs)
+# Chaque job définit un ensemble de cibles à scraper.
+# 
+scrape_configs:
+
+  
+  # Job 1 : Script Python local (Windows)
+  #
+  # Votre script Python expose des métriques sur http://localhost:8000/metrics
+  # grâce à la librairie prometheus_client :
+  #
+  #   from prometheus_client import start_http_server, Counter, Gauge, Histogram
+  #   start_http_server(8000)
+  #
+  # Depuis un container Docker sur Windows, "localhost" pointe vers le container
+  # lui-même. Pour atteindre Windows, on utilise host.docker.internal.
+  # Docker Desktop pour Windows résout automatiquement ce nom d'hôte.
+  
+  - job_name: "python_pipeline"
+    scrape_interval: 15s   # Override global si besoin d'une fréquence différente
+    static_configs:
+      - targets:
+          - "host.docker.internal:8000"   # Python tourne sur Windows, port 8000
+        labels:
+          service: "pipeline"
+          language: "python"
+          host: "windows_local"
+
+    # Métriques attendues depuis Python (prometheus_client) :
+    #   pipeline_records_ingested_total       : Counter
+    #   pipeline_api_calls_total              : Counter (label: source=alphavantage|twelvedata)
+    #   pipeline_api_errors_total             : Counter (label: source, error_type)
+    #   pipeline_run_duration_seconds         : Gauge   (durée du dernier run)
+    #   pipeline_last_success_timestamp       : Gauge   (timestamp Unix du dernier succès)
+    #   pipeline_tickers_processed            : Gauge   (nb tickers traités)
+    #   mysql_insert_duration_seconds         : Histogram
+    #   azure_upload_duration_seconds         : Histogram
+    #   data_quality_score                    : Gauge   (0.0 à 1.0)
+
+
+  
+  # Job 2 : mysqld-exporter (métriques MySQL)
+  #
+  # L'exporter tourne dans Docker et expose les métriques MySQL sur le port 9104.
+  # Depuis Prometheus (aussi dans Docker), on l'atteint via son nom de service.
+  
+  - job_name: "mysql"
+    scrape_interval: 30s   # MySQL change moins vite, 30s suffit
+    static_configs:
+      - targets:
+          - "mysqld-exporter:9104"   # Nom du service Docker
+        labels:
+          service: "database"
+          db_type: "mysql"
+
+    # Métriques clés collectées :
+    #   mysql_global_status_connections         : Connexions actives
+    #   mysql_global_status_queries             : Requêtes/sec
+    #   mysql_global_status_slow_queries        : Requêtes lentes
+    #   mysql_info_schema_table_rows            : Nb lignes par table
+    #   mysql_global_status_innodb_row_ops_*    : Opérations InnoDB
+
+
+  
+  # Job 3 : Prometheus lui-même (métriques internes)
+  #
+  # Permet de surveiller la santé de Prometheus : mémoire consommée,
+  # nombre de séries actives, durée des scrapes, etc.
+  
+  - job_name: "prometheus"
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - "localhost:9090"   # Prometheus se scrape lui-même
+        labels:
+          service: "monitoring"
+
+
+  
+  # Job 4 : Grafana (métriques internes)
+  #
+  # Grafana expose ses propres métriques sur /metrics (requêtes de dashboard,
+  # erreurs de datasource, temps de réponse, etc.)
+  
+  - job_name: "grafana"
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - "grafana:3000"
+        labels:
+          service: "visualization"
+
+    metrics_path: "/metrics"   # Chemin par défaut Grafana
+
+
+  
+  # Job 5 : Alertmanager (métriques internes)
+  
+  - job_name: "alertmanager"
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - "alertmanager:9093"
+        labels:
+          service: "alerting"
+

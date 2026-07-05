@@ -1,0 +1,40 @@
+
+# requirements.txt: Dépendances Python du pipeline
+#
+# Installation :
+#   pip install -r requirements.txt
+#
+# Environnement recommandé :
+
+#Dans Prompt Anaconda, se placer dans le dossier du laboratoire :
+#   conda create -n venvlabo312 python=3.12
+#   cd C:\Users\VotreNom\anaconda3\envs\venvlabo312   (Windows)
+#  conda activate venvlabo312
+#   pip install -r requirements.txt
+
+
+# APIs & HTTP
+requests>=2.31.0           # Appels HTTP aux APIs financières
+urllib3>=2.0.0             # Dépendance de requests
+
+# Traitement des données
+pandas>=2.1.0              # DataFrames: nettoyage, transformation, indicateurs
+numpy>=1.26.0              # Calculs numériques (RSI, rendements)
+pyarrow>=14.0.0            # Sérialisation Parquet (azure blob + pandas)
+
+# Azure Blob Storage
+azure-storage-blob>=12.19.0   # Client Python pour Azure Blob Storage
+
+# Base de données MySQL
+sqlalchemy>=2.0.0          # connexion base de données
+pymysql>=1.1.0             # Driver MySQL pur Python (pas de client natif requis)
+cryptography>=41.0.0       # Requis par pymysql pour l'authentification SSL
+
+# Surveillance Prometheus
+prometheus-client>=0.19.0  # Expose les métriques sur http://localhost:8000/metrics
+
+# Configuration
+python-dotenv>=1.0.0       # Charge les variables depuis le fichier .env
+
+# Planification (mode --schedule)
+schedule>=1.2.0            # Planificateur simple

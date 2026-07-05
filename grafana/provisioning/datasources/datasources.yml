@@ -1,0 +1,65 @@
+# grafana/provisioning/datasources/datasources.yml
+# - Provisionnement automatique des sources de données Grafana
+#
+# EMPLACEMENT : ./grafana/provisioning/datasources/datasources.yml
+#
+# Ce fichier est lu au démarrage de Grafana et configure automatiquement
+# les deux sources de données sans action manuelle dans l'interface.
+#
+# Rechargement sans redémarrer :
+#   curl -X POST http://admin:admin@localhost:3000/api/admin/provisioning/datasources/reload
+
+
+apiVersion: 1
+
+datasources:
+
+
+  # Source 1 : Prometheus — Métriques du pipeline Python
+  #
+  # Utilisée pour afficher :
+  #   - Taux d'ingestion (records/minute)
+  #   - Erreurs API (rate sur 5m)
+  #   - Durée des runs
+  #   - Score de qualité des données
+  #   - Métriques MySQL (via mysqld-exporter)
+  
+  - name: Prometheus
+    type: prometheus
+    access: proxy         # Grafana (dans Docker) contacte Prometheus (dans Docker)
+    url: http://prometheus:9090
+    isDefault: false
+    editable: true        # Modifiable depuis l'UI Grafana
+    jsonData:
+      timeInterval: "15s"           # Correspond au scrape_interval Prometheus
+      httpMethod: "POST"
+      queryTimeout: "60s"
+    version: 1
+
+  
+  # Source 2 : MySQL: Données boursières Gold
+  #
+  # Utilisée pour afficher :
+  #   - Graphiques OHLCV (cours, chandeliers)
+  #   - SMA 20 / EMA 50
+  #   - RSI 14 avec zones 30/70
+  #   - VWAP
+  #   - Tableaux de données par ticker
+  
+  - name: MySQL-StockDB
+    type: mysql
+    access: proxy         # Grafana (dans Docker) contacte MySQL (dans Docker)
+    url: mysql:3306       # Nom du service Docker, PAS localhost
+    database: stockdb
+    user: hduser
+    isDefault: true       # Source par défaut dans les nouveaux dashboards
+    editable: true
+    secureJsonData:
+      password: "root"   # Mot de passe MySQL (hduser)
+    jsonData:
+      maxOpenConns: 10          # Connexions MySQL max depuis Grafana
+      maxIdleConns: 10
+      connMaxLifetime: 14400    # 4 heures en secondes
+      timeInterval: "1m"        # Granularité minimale des requêtes temporelles
+    version: 1
+

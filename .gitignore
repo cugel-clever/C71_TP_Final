@@ -1,0 +1,107 @@
+# ==========================================
+# Python - Compiled & Cached Code
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==========================================
+# Python - Virtual Environments
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ==========================================
+# Docker & Container Artifacts
+# ==========================================
+# Avoid committing exported image tars or container data mounts
+*.tar
+*.tar.gz
+*.tar.xz
+docker-compose.override.yml
+.docker-volumes/
+
+# ==========================================
+# Azure Specific Cloud Ecosystem
+# ==========================================
+# Azure Functions local runtime settings & secrets
+local.settings.json
+.azurefunctions/
+.funcignore
+
+# Azure CLI, Developer CLI (azd), and DevOps telemetry
+.azure/
+.azure-cli/
+.azd/
+azure-deploy.log
+.deployments/
+antenv*
+
+# ==========================================
+# Environment Variables & Secrets (CRITICAL)
+# ==========================================
+.env
+.env.local
+.env.*.local
+*.env
+*.secret
+*.pem
+*.key
+secrets.json
+
+# ==========================================
+# IDEs & Text Editors (VS Code / PyCharm)
+# ==========================================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*~
+
+# ==========================================
+# Testing & Code Quality Tracking
+# ==========================================
+.htmlcov/
+.tox/
+.nosetests
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

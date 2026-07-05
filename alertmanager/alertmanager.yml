@@ -1,0 +1,136 @@
+# alertmanager/alertmanager.yml — Configuration Alertmanager
+#
+# EMPLACEMENT : ./alertmanager/alertmanager.yml
+#
+# Alertmanager reçoit les alertes de Prometheus et les route vers
+# les canaux de notification configurés (email, Slack, webhook...).
+#
+# Pour activer l'email : remplir la section email_configs ci-dessous.
+# Pour activer Slack   : décommenter la section slack_configs.
+
+
+global:
+  # Durée pendant laquelle une alerte résolue reste "resolved" avant d'être supprimée
+  resolve_timeout: 5m
+
+  # Configuration SMTP (email)
+  # Décommenter et remplir pour recevoir des alertes par email
+  # smtp_smarthost: "smtp.gmail.com:587"
+  # smtp_from: "alertes@votre-domaine.com"
+  # smtp_auth_username: "votre-email@gmail.com"
+  # smtp_auth_password: "votre-app-password"   # App Password Gmail (pas le mot de passe normal)
+  # smtp_require_tls: true
+
+
+# 
+# TEMPLATES (optionnel)
+# Personnaliser le format des notifications
+
+# templates:
+#   - '/etc/alertmanager/templates/*.tmpl'
+
+
+
+# ROUTAGE DES ALERTES
+# Les alertes sont évaluées de haut en bas.
+# La première route qui correspond est utilisée.
+
+route:
+  # Récepteur par défaut (si aucune route spécifique ne correspond)
+  receiver: "default-receiver"
+
+  # Regroupe les alertes par nom et sévérité avant d'envoyer
+  group_by: ["alertname", "severity"]
+
+  # Attend 30s avant d'envoyer le premier groupe (pour regrouper les alertes simultanées)
+  group_wait: 30s
+
+  # Intervalle entre deux envois pour le même groupe d'alertes actives
+  group_interval: 5m
+
+  # Ré-envoie une alerte toujours active après ce délai
+  repeat_interval: 4h
+
+  # Routes spécifiques par sévérité
+  routes:
+
+    # Alertes critiques → notification immédiate
+    - match:
+        severity: critical
+      receiver: "default-receiver"
+      group_wait: 10s        # Envoie plus vite pour les critiques
+      repeat_interval: 1h    # Rappel toutes les heures
+
+    # Alertes warning: regroupées
+    - match:
+        severity: warning
+      receiver: "default-receiver"
+      group_wait: 1m
+      repeat_interval: 4h
+
+    # Alertes info (RSI) → silencieuses par défaut (null receiver)
+    # Décommenter pour activer les notifications RSI
+    - match:
+        severity: info
+      receiver: "null"       # Ignore les alertes info (visible dans l'UI Alertmanager)
+
+
+
+# RÉCEPTEURS
+# Définissent où et comment envoyer les notifications.
+
+receivers:
+
+  # Récepteur vide — ignore les alertes routées vers lui
+  - name: "null"
+
+  # Récepteur par défaut; log dans l'UI Alertmanager (http://localhost:9093)
+  # Ajouter email_configs ou slack_configs pour des notifications réelles
+  - name: "default-receiver"
+    # Email (décommenter pour activer)
+    # email_configs:
+    #   - to: "votre-email@gmail.com"
+    #     subject: "[STOCK PIPELINE] {{ .GroupLabels.alertname }} — {{ .Status | toUpper }}"
+    #     body: |
+    #       {{ range .Alerts }}
+    #       Alerte  : {{ .Annotations.summary }}
+    #       Détail  : {{ .Annotations.description }}
+    #       Sévérité: {{ .Labels.severity }}
+    #       Début   : {{ .StartsAt }}
+    #       {{ end }}
+    #     send_resolved: true   # Envoie aussi une notif quand l'alerte est résolue
+
+    # Slack (décommenter pour activer)
+    # slack_configs:
+    #   - api_url: "https://hooks.slack.com/services/VOTRE/WEBHOOK/URL"
+    #     channel: "#stock-alerts"
+    #     title: "{{ .GroupLabels.alertname }}"
+    #     text: "{{ range .Alerts }}{{ .Annotations.description }}{{ end }}"
+    #     send_resolved: true
+
+    # Webhook générique (décommenter pour activer)
+    # webhook_configs:
+    #   - url: "http://host.docker.internal:5000/webhook"
+    #     send_resolved: true
+
+
+
+# SILENCES (inhibitions)
+# Supprime certaines alertes quand d'autres sont actives.
+# Exemple : si MySQL est down, ne pas envoyer "PipelineStalled" en plus.
+
+inhibit_rules:
+  - source_match:
+      alertname: "MySQLDown"
+    target_match:
+      alertname: "PipelineStalled"
+    equal: ["environment"]
+    # Si MySQL est down, on inhibe l'alerte PipelineStalled (redondante)
+
+  - source_match:
+      alertname: "PipelineDown"
+    target_match:
+      alertname: "PipelineStalled"
+    equal: ["environment"]
+    # Si le pipeline est down, on inhibe PipelineStalled
+
