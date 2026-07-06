@@ -18,20 +18,34 @@ load_dotenv()
 
 
 
-# APIs FINANCIÈRES
-
-
 # Alpha Vantage
-ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "")
-ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
+# ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "")
+# ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query"
+
+# APIs OMDb
+OMDB_API_KEY = os.getenv("OMDB_API_KEY", "")
+OMDB_BASE_URL = "https://www.omdbapi.com"
 
 # Twelve Data
-TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "")
-TWELVE_DATA_BASE_URL = "https://api.twelvedata.com"
+# TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "")
+# TWELVE_DATA_BASE_URL = "https://api.twelvedata.com"
 
 # Liste des tickers à traiter
 # Format : liste de symboles boursiers (marchés US par défaut)
 TICKERS = [
+    "AAPL",   # Apple
+    "MSFT",   # Microsoft
+    "TSLA",   # Tesla
+    "AMZN",   # Amazon
+    "GOOGL",  # Alphabet (Google)
+    "META",   # Meta (Facebook)
+    "NVDA",   # NVIDIA
+    "NFLX",   # Netflix
+    "JPM",    # JPMorgan Chase
+    "V",      # Visa
+]
+
+COUNTRY = [
     "AAPL",   # Apple
     "MSFT",   # Microsoft
     "TSLA",   # Tesla
@@ -151,8 +165,11 @@ def validate_config() -> list[str]:
     """
     errors = []
 
-    if not ALPHA_VANTAGE_API_KEY:
-        errors.append("ALPHA_VANTAGE_API_KEY manquante dans .env")
+    # if not ALPHA_VANTAGE_API_KEY:
+        # errors.append("ALPHA_VANTAGE_API_KEY manquante dans .env")
+
+    if not OMDB_API_KEY:
+        errors.append("OMDB_API_KEY manquante dans .env")
 
     if not TWELVE_DATA_API_KEY:
         errors.append("TWELVE_DATA_API_KEY manquante dans .env")

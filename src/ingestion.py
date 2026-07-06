@@ -197,6 +197,90 @@ class AlphaVantageClient:
 
 
 # 
+# OMDB: Source principale
+#
+
+class OMDBClient:
+    """
+    Client pour l'API OMDB.
+
+    Documentation : https://omdbpy.readthedocs.io/_/downloads/en/latest/pdf/
+    Tier gratuit : 1000 requêtes/jour
+    """
+
+    def __init__(self):
+        self.api_key = settings.OMDB_API_KEY
+        self.base_url = settings.OMDB_BASE_URL
+
+    def fetch_daily_ohlcv(self, ticker: str) -> Optional[dict]:
+        """
+        Récupère les données OHLCV journalières ajustées pour un ticker.
+
+        'outputsize=full' retourne 20 ans d'historique (vs 100 jours pour 'compact').
+        On utilise 'full' au premier run, puis 'compact' pour les runs suivants.
+        À adapter selon votre logique de run incrémental.
+
+        Args:
+            ticker : symbole boursier ("AAPL", "MSFT", etc.)
+
+        Returns:
+            Dictionnaire JSON brut d'Alpha Vantage, ou None si échec.
+
+        Structure de réponse Alpha Vantage :
+        {
+            "Meta Data": {
+                "1. Information": "Daily Adjusted Time Series",
+                "2. Symbol": "AAPL",
+                "3. Last Refreshed": "2026-06-17",
+                ...
+            },
+            "Time Series (Daily)": {
+                "2026-06-17": {
+                    "1. open": "185.0000",
+                    "2. high": "186.5000",
+                    "3. low": "184.2000",
+                    "4. close": "185.9200",
+                    "5. adjusted close": "185.9200",
+                    "6. volume": "52000000",
+                    "7. dividend amount": "0.0000",
+                    "8. split coefficient": "1.0"
+                },
+                ...
+            }
+        }
+        """
+        logger.info(f"[AlphaVantage] récupération OHLCV pour {ticker}")
+
+        params = {
+            "function":   "TIME_SERIES_DAILY_ADJUSTED",
+            "symbol":     ticker,
+            "outputsize": "full",       # Historique complet (20 ans)
+            "datatype":   "json",
+            "apikey":     self.api_key,
+        }
+
+        data = _call_with_retry(self.base_url, params, source="alphavantage")
+
+        if data is None:
+            return None
+
+        # Vérifier que la clé principale est présente dans la réponse
+        if "Time Series (Daily)" not in data:
+            logger.error(f"[AlphaVantage] Clé 'Time Series (Daily)' absente pour {ticker}")
+            return None
+
+        # Nombre de lignes récupérées pour les métriques
+        n_records = len(data["Time Series (Daily)"])
+        metrics.record_ingestion(ticker=ticker, source="alphavantage", n_records=n_records)
+        logger.info(f"[AlphaVantage] {ticker} — {n_records} jours récupérés")
+
+        # Respect du rate limit (5 req/min = 12s minimum entre appels)
+        time.sleep(settings.API_RATE_LIMIT_DELAY)
+
+        return data
+
+
+# 
 # TWELVE DATA — Source de secours (fallback)
 # 
 
