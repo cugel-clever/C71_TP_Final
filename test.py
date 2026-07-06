@@ -1,4 +1,15 @@
 import requests
+import os
+from dotenv import load_dotenv
+from pymongo import MongoClient
+
+# Charge les variables depuis le fichier .env situé à la racine du projet
+# Si une variable est déjà dans l'environnement système, elle n'est pas écrasée
+# load_dotenv()
+
+# APIs OMDb
+# OMDB_API_KEY = os.getenv("OMDB_API_KEY", "")
+# OMDB_BASE_URL = "https://www.omdbapi.com"
 
 def get_details_requete_films(param_recherche, cle_api):
     base_url = "https://omdbapi.com/"
@@ -11,6 +22,10 @@ def get_details_requete_films(param_recherche, cle_api):
 
     page = 1
     while True:
+        # Pour le développement limiter à ~10 occurrences
+        if len(result_films) > 10:
+            break
+
         # Mettre à jour les paramètres avec la page courante
         params['page'] = page
 
@@ -53,28 +68,45 @@ def get_details_requete_films(param_recherche, cle_api):
 
     return result_films
 
+def films_mongodb(movies_details):
+    # Connexion à MongoDB
+    # client = MongoClient(os.getenv("MONGODB_URI"))
+    client = MongoClient("localhost:27017")
+    
+    # Sélection de la base de données et de la collection
+    db = client['c71_tp_final']
+    collection = db['films']
 
-# Exécution du programme. À terme, mettre infos sensibles dans .env
-cle_api = "ede1c94c" 
+    # Sauvegarde des films dans la collection
+    for movie in movies_details:
+        collection.insert_one(movie)
 
-# On souhaite tous les films de 2003 ayant le libellé "love" dans le titre
-param_recherche = {
-    "s": "love",
-    "y": "2003"
-}
+    # Fermeture de la connexion à MongoDB
+    client.close()
 
 def main():
     # De facto, le pipeline
 
-    # Critère compréhension des données effectuée (document word tp-final.docx)
+    # Critère Compréhension des données effectuée (document word tp-final.docx)
     # Critère Extraction des données
-    films_details = get_details_requete_films(param_recherche, cle_api)
+
+    # Exécution du programme. À terme, mettre infos sensibles dans .env
+    cle_api = "ede1c94c" 
+
+    # On souhaite tous les films de 2003 ayant le libellé "love" dans le titre
+    param_recherche = {
+        "s": "love",
+        "y": "2003"
+    }
+
+    # ### films_details = get_details_requete_films(param_recherche, cle_api)
     
     print(f"Details of films found with search string by keyword (s) and year (y): {len(films_details)}")
 
-
-    for film in films_details:
-        print(film)
+    # Sauvegarde des films dans MongoDb
+    # ### films_mongodb(films_details)
+    # for film in films_details:
+        # print(film)
 
 
 if __name__ == "__main__":
