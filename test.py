@@ -3,13 +3,12 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
+#  Imports internes
+from config import settings
+
 # Charge les variables depuis le fichier .env situé à la racine du projet
 # Si une variable est déjà dans l'environnement système, elle n'est pas écrasée
-# load_dotenv()
-
-# APIs OMDb
-# OMDB_API_KEY = os.getenv("OMDB_API_KEY", "")
-# OMDB_BASE_URL = "https://www.omdbapi.com"
+load_dotenv()
 
 def get_details_requete_films(param_recherche, cle_api):
     base_url = "https://omdbapi.com/"
@@ -71,7 +70,7 @@ def get_details_requete_films(param_recherche, cle_api):
 def films_mongodb(movies_details):
     # Connexion à MongoDB
     # client = MongoClient(os.getenv("MONGODB_URI"))
-    client = MongoClient("localhost:27017")
+    client = MongoClient(settings.MONGODB_URI)
     
     # Sélection de la base de données et de la collection
     db = client['c71_tp_final']
@@ -84,14 +83,13 @@ def films_mongodb(movies_details):
     # Fermeture de la connexion à MongoDB
     client.close()
 
+API_KEY = settings.OMDB_API_KEY
+
 def main():
     # De facto, le pipeline
 
     # Critère Compréhension des données effectuée (document word tp-final.docx)
     # Critère Extraction des données
-
-    # Exécution du programme. À terme, mettre infos sensibles dans .env
-    cle_api = "ede1c94c" 
 
     # On souhaite tous les films de 2003 ayant le libellé "love" dans le titre
     param_recherche = {
@@ -99,12 +97,12 @@ def main():
         "y": "2003"
     }
 
-    # ### films_details = get_details_requete_films(param_recherche, cle_api)
+    films_details = get_details_requete_films(param_recherche, API_KEY)
     
     print(f"Details of films found with search string by keyword (s) and year (y): {len(films_details)}")
 
     # Sauvegarde des films dans MongoDb
-    # ### films_mongodb(films_details)
+    films_mongodb(films_details)
     # for film in films_details:
         # print(film)
 
