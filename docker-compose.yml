@@ -31,7 +31,7 @@ services:
   mongodb:
     image: mongo:latest
     ports:
-      - "27017:27017"
+      - "27018:27017" #Car client lourd sur PC...
     volumes:
       - mongo_data:/data/db # Permet de ne pas perdre vos films au redémarrage
     restart: unless-stopped
