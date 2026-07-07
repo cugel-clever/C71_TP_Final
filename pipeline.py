@@ -21,8 +21,8 @@ def get_details_requete_films(param_recherche, cle_api):
 
     page = 1
     while True:
-        # Pour le développement limiter à ~10 occurrences
-        if len(result_films) > 10:
+        # Pour le développement limiter à ~20 occurrences
+        if len(result_films) > 20:
             break
 
         # Mettre à jour les paramètres avec la page courante
@@ -74,7 +74,7 @@ def films_mongodb(movies_details):
     
     # Sélection de la base de données et de la collection
     db = client['c71_tp_final']
-    collection = db['films']
+    collection = db['films_bronze']
 
     # Sauvegarde des films dans la collection
     for movie in movies_details:
@@ -101,10 +101,11 @@ def main():
     
     print(f"Details of films found with search string by keyword (s) and year (y): {len(films_details)}")
 
-    # Sauvegarde des films dans MongoDb
+    # Sauvegarde des films dans MongoDb (Couche Bronze)
     films_mongodb(films_details)
-    # for film in films_details:
-        # print(film)
+    
+    for film in films_details:
+        print(film)
 
 
 if __name__ == "__main__":
