@@ -1,0 +1,40 @@
+
+services:
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  your_application:
+    build: .
+    command: ["python", "/app/pipeline.py"]
+    volumes:
+      - .:/app  # Mount the entire project directory to /app in the container    
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+
+  metrics_server:
+    build: .
+    working_dir: /app
+    command: ["python", "/app/metrics.py"]
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1  # <-- FORCE L'AFFICHAGE DES LOGS IMMEDIATEMENT
+      - API_KEY=OMDB_API_KEY
+
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db # Permet de ne pas perdre vos films au redémarrage
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
