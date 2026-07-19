@@ -34,7 +34,7 @@ cryptography>=41.0.0       # Requis par pymysql pour l'authentification SSL
 prometheus-client>=0.19.0  # Expose les métriques sur http://localhost:8000/metrics
 
 # Configuration
-python-dotenv>=1.0.0       # Charge les variables depuis le fichier .env
+python-dotenv>=1.2.2       # Charge les variables depuis le fichier .env
 
 # Planification (mode --schedule)
 schedule>=1.2.0            # Planificateur simple
